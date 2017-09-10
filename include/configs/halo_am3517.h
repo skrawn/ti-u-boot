@@ -1,5 +1,4 @@
-/*
- * halo_am3517.h - Configuration for Halo Instrument AM3517
+/* * halo_am3517.h - Configuration for Halo Instrument AM3517
  *
  * Author: Sean Donohue <sean.donohue@asdi.com>
  *
@@ -235,7 +234,7 @@
 	"ubootstart=0x20000\0" \
 	"ubootsize=0x100000\0" \
 	"rootfsubifsprodstage=0x280000\0" \
-	"ubipartname=ubi\0" \
+	"ubipartname=${mender_mtd_ubi_dev_name}\0" \
 	"mmcrootfstype=ext4 rootwait fixrtc\0" \
 	"mmcargs=setenv bootargs console=${console} " \
 		"${mtdparts} " \
@@ -246,8 +245,8 @@
 	"nandargs=setenv bootargs console=${console} " \
 		"${mtdparts} " \
 		"${optargs} " \
-		"root=ubi0:${nandbootpart} ro ubi.mtd=${ubipartname} " \
-		"rootfstype=ubifs rootwait " \
+		"root=${mender_kernel_root} ro ubi.mtd=${ubipartname} " \
+		"rootfstype=ubifs rootwait ubi.fm_autoconvert=1 " \
 		"${cmdline}\0" \
 	"nandMLO=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} MLO; " \
 		"nandecc hw hamming1; nand erase.part MLO; " \
@@ -281,10 +280,12 @@
 	"mmcboot=echo Booting from mmc ...; " \
 		"run mmcargs; " \
 		"bootz ${loadaddr} - ${fdtaddr}\0" \
-	"nandboot=echo Booting from nand ...; " \
+	"nandboot=echo Booting from nand with mender support...; " \
 		"run nandargs; " \
-		"ubi part ${ubipartname}; " \
-		"ubifsmount ubi0:${nandbootpart}; " \
+        "run mender_setup; "\
+        "run set_ubiargs; "\
+        "ubi part ${mender_mtd_ubi_dev_name} && "\
+        "ubifsmount ${mender_uboot_root_name} && "\
 		"ubifsload ${loadaddr} /boot/uImage; " \
 		"ubifsload ${fdtaddr} /boot/${fdtfile}; " \
 		"bootm ${loadaddr} - ${fdtaddr}\0" \
@@ -306,7 +307,7 @@
 			"run loadfdt; " \
 			"run mmcboot; " \
 		"fi; " \
-	"else run nandboot; fi"
+	"else run nandboot; run mender_try_to_recover; fi"
 
 /* Miscellaneous configurable options */
 #define CONFIG_AUTO_COMPLETE
@@ -407,5 +408,10 @@
 #define CONFIG_SPL_MTD_SUPPORT
 #define CONFIG_SPL_POWER_SUPPORT
 #define CONFIG_SPL_LDSCRIPT		"$(CPUDIR)/omap-common/u-boot-spl.lds"
+
+/* defines for Mender */
+#define CONFIG_BOOTCOUNT_ENV
+#define CONFIG_BOOTCOUNT_LIMIT
+
 
 #endif /* __CONFIG_H */
