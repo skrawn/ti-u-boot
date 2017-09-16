@@ -242,12 +242,14 @@
 		"root=${mmcroot} " \
 		"rootfstype=${mmcrootfstype} " \
 		"${cmdline}\0" \
-	"nandargs=setenv bootargs console=${console} " \
-		"${mtdparts} " \
-		"${optargs} " \
-		"root=${mender_kernel_root} ro ubi.mtd=${ubipartname} " \
-		"rootfstype=ubifs rootwait ubi.fm_autoconvert=1 " \
-		"${cmdline}\0" \
+	"nandargs=run mender_setup; "\
+        "setenv ubipartname ${mender_mtd_ubi_dev_name}; "\
+        "setenv bootargs console=${console} " \
+            "${mtdparts} " \
+            "${optargs} " \
+            "root=${mender_kernel_root} ro ubi.mtd=${ubipartname} " \
+            "rootfstype=ubifs rootwait ubi.fm_autoconvert=1 " \
+            "${cmdline}\0" \
 	"nandMLO=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} MLO; " \
 		"nandecc hw hamming1; nand erase.part MLO; " \
 		"nand write ${loadaddr} 0x0 ${MLOsize}; nandecc sw bch8; \0"\
@@ -266,7 +268,7 @@
         "ubi createvol rootfsa ${nandrootfssize}; ubi createvol rootfsb ${nandrootfssize}; ubi createvol data;\0"\
     "nandubifswrite=ubi write ${loadaddr} ${nandbootpart} ${nandrootfssize};\0"  \
     "nandreflashmmc=if mmc rescan; then echo Reflashing NAND...; " \
-		"run nandMLO; run nanduboot; run nandubifsloadmmc; ubi part ${ubipartname}; run nandubifswrite;" \
+		"run nandargs; run nandMLO; run nanduboot; run nandubifsloadmmc; ubi part ${ubipartname}; run nandubifswrite;" \
 		"else echo No MMC detected!; fi;\0" \
 	"nandfirstrun=" \
 		"run nandMLOfirstrun; run nandubootfirstrun; run nandubifsloadfirstrun; run nandubicreate; run nandubifswrite;\0" \
@@ -281,9 +283,7 @@
 		"run mmcargs; " \
 		"bootz ${loadaddr} - ${fdtaddr}\0" \
 	"nandboot=echo Booting from nand with mender support...; " \
-		"run nandargs; " \
-        "run mender_setup; "\
-        "run set_ubiargs; "\
+        "run nandargs; "\
         "ubi part ${mender_mtd_ubi_dev_name} && "\
         "ubifsmount ${mender_uboot_root_name} && "\
 		"ubifsload ${loadaddr} /boot/uImage; " \
