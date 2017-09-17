@@ -192,13 +192,13 @@
 /* NAND block size is 128 KiB.  Synchronize these values with
  * corresponding Device Tree entries in Linux:
  *  MLO(SPL)            1 * NAND_BLOCK_SIZE = 128 KiB  @ 0x000000
- *  u-boot              8 * NAND_BLOCK_SIZE = 1920 KiB @ 0x020000
+ *  u-boot              8 * NAND_BLOCK_SIZE = 1024 KiB @ 0x020000
  *  u-boot-env          2 * NAND_BLOCK_SIZE = 256 KiB  @ 0x120000
  *  ubi                 Remaining Flash Space           @ 0x160000
  */
 #define MTDIDS_DEFAULT "nand0=omap2-nand.0"
 #define MTDPARTS_DEFAULT "mtdparts=omap2-nand.0:"	\
-	"512k(MLO),"					\
+	"128k(MLO),"					\
 	"1024k(u-boot),"				\
 	"256k(u-boot-env),"				\
 	"-(ubi)"
