@@ -234,7 +234,7 @@
 	"mmcpart=1\0" \
 	"mmcroot=/dev/mmcblk0p2 rw\0" \
 	"nandbootpart=rootfsa\0" \
-	"nandrootfssize=0x8000000\0" \
+	"nandrootfssize=0x5000000\0" \
 	"MLOprodstage=0x160000\0" \
 	"ubootprodstage=0x180000\0" \
 	"MLOsize=0x20000\0" \
