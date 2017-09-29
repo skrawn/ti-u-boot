@@ -222,6 +222,9 @@ static int abortboot_normal(int bootdelay)
 {
 	int abort = 0;
 	unsigned long ts;
+#ifndef CONFIG_MENUKEY
+	int key;
+#endif	
 
 #ifdef CONFIG_MENUPROMPT
 	printf(CONFIG_MENUPROMPT);
@@ -250,14 +253,24 @@ static int abortboot_normal(int bootdelay)
 		ts = get_timer(0);
 		do {
 			if (tstc()) {	/* we got a key press	*/
-				abort  = 1;	/* don't auto boot	*/
-				bootdelay = 0;	/* no more delay	*/
+				/* Reject input that is not an actual character. For example, a 0x0
+				 * could be received and mess up the autoboot.
+				 */
 # ifdef CONFIG_MENUKEY
 				menukey = getc();
+				if (menukey) {
+					abort  = 1;	/* don't auto boot	*/
+					bootdelay = 0;	/* no more delay	*/
+					break;
+				}
 # else
-				(void) getc();  /* consume input	*/
+				key = getc();
+				if (key) {
+					abort  = 1;	/* don't auto boot	*/
+					bootdelay = 0;	/* no more delay	*/
+					break;
+				}
 # endif
-				break;
 			}
 			udelay(10000);
 		} while (!abort && get_timer(ts) < 1000);

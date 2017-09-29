@@ -1,0 +1,12 @@
+if TARGET_HALO_AM3517
+
+config SYS_BOARD
+	default "haloam3517"
+
+config SYS_VENDOR
+	default "asd"
+
+config SYS_CONFIG_NAME
+	default "halo_am3517"
+
+endif
