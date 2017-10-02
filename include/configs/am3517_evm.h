@@ -50,7 +50,7 @@
  * Size of malloc() pool
  */
 #define CONFIG_ENV_SIZE			(128 << 10)	/* 128 KiB sector */
-#define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE + (128 << 10))
+#define CONFIG_SYS_MALLOC_LEN		(CONFIG_ENV_SIZE + (128 << 11))
 /*
  * DDR related
  */
@@ -135,6 +135,8 @@
 #define CONFIG_CMD_I2C		/* I2C serial bus support	*/
 #define CONFIG_CMD_MMC		/* MMC support			*/
 #define CONFIG_CMD_NAND		/* NAND support			*/
+#define CONFIG_CMD_PART
+#define CONFIG_CMD_MTDPARTS
 #define CONFIG_CMD_DHCP
 #undef CONFIG_CMD_PING
 
@@ -176,8 +178,8 @@
 /* nand device jffs2 lives on */
 #define CONFIG_JFFS2_DEV		"nand0"
 /* start of jffs2 partition */
-#define CONFIG_JFFS2_PART_OFFSET	0x680000
-#define CONFIG_JFFS2_PART_SIZE		0xf980000	/* sz of jffs2 part */
+#define CONFIG_JFFS2_PART_OFFSET	0x780000
+#define CONFIG_JFFS2_PART_SIZE		0xf780000	/* sz of jffs2 part */
 
 /* Environment information */
 #define CONFIG_BOOTDELAY	10
@@ -186,13 +188,19 @@
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"loadaddr=0x82000000\0" \
+	"bootenv=uEnv.txt\0" \
 	"console=ttyO2,115200n8\0" \
+	"mtdids=" MTDIDS_DEFAULT "\0" \
+	"mtdparts=" MTDPARTS_DEFAULT "\0" \
 	"mmcdev=0\0" \
 	"mmcargs=setenv bootargs console=${console} " \
 		"root=/dev/mmcblk0p2 rw rootwait\0" \
 	"nandargs=setenv bootargs console=${console} " \
 		"root=/dev/mtdblock4 rw " \
 		"rootfstype=jffs2\0" \
+	"loadbootenv=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${bootenv}\0"\
+	"importbootenv=echo Importing environment from mmc ...; " \
+		"env import -t ${loadaddr} ${filesize}\0" \
 	"loadbootscript=fatload mmc ${mmcdev} ${loadaddr} boot.scr\0" \
 	"bootscript=echo Running bootscript from mmc ...; " \
 		"source ${loadaddr}\0" \
@@ -202,7 +210,7 @@
 		"bootm ${loadaddr}\0" \
 	"nandboot=echo Booting from nand ...; " \
 		"run nandargs; " \
-		"nand read ${loadaddr} 280000 400000; " \
+		"nand read ${loadaddr} 280000 500000; " \
 		"bootm ${loadaddr}\0" \
 
 #define CONFIG_BOOTCOMMAND \
@@ -222,7 +230,7 @@
  * Miscellaneous configurable options
  */
 #define V_PROMPT			"AM3517_EVM # "
-
+#define CONFIG_PARTITION_UUIDS
 #define CONFIG_SYS_LONGHELP		/* undef to save memory */
 #define CONFIG_SYS_HUSH_PARSER		/* use "hush" command parser */
 #define CONFIG_SYS_PROMPT		V_PROMPT
@@ -276,7 +284,7 @@
 
 #define CONFIG_NAND_OMAP_GPMC
 #define CONFIG_ENV_IS_IN_NAND		1
-#define SMNAND_ENV_OFFSET		0x260000 /* environment starts here */
+#define SMNAND_ENV_OFFSET		0x240000 /* environment starts here */
 
 #define CONFIG_SYS_ENV_SECT_SIZE	(128 << 10)	/* 128 KiB */
 #define CONFIG_ENV_OFFSET		SMNAND_ENV_OFFSET
@@ -308,8 +316,8 @@
 #define CONFIG_SPL_FRAMEWORK
 #define CONFIG_SPL_BOARD_INIT
 #define CONFIG_SPL_NAND_SIMPLE
-#define CONFIG_SPL_TEXT_BASE		0x40200800
-#define CONFIG_SPL_MAX_SIZE		(54 * 1024)	/* 8 KB for stack */
+#define CONFIG_SPL_TEXT_BASE		0x40200000
+#define CONFIG_SPL_MAX_SIZE		(64 * 1024)	/* 8 KB for stack */
 
 #define CONFIG_SPL_BSS_START_ADDR	0x80000000
 #define CONFIG_SPL_BSS_MAX_SIZE		0x80000		/* 512 KB */
@@ -330,23 +338,49 @@
 #define CONFIG_SPL_NAND_BASE
 #define CONFIG_SPL_NAND_DRIVERS
 #define CONFIG_SPL_NAND_ECC
+#define CONFIG_SPL_MTD_SUPPORT
 #define CONFIG_SPL_POWER_SUPPORT
 #define CONFIG_SPL_LDSCRIPT		"$(CPUDIR)/omap-common/u-boot-spl.lds"
 
 /* NAND boot config */
+#define CONFIG_BCH
 #define CONFIG_SYS_NAND_5_ADDR_CYCLE
+#define CONFIG_SYS_NAND_BUSWIDTH_16BIT
 #define CONFIG_SYS_NAND_PAGE_COUNT	64
 #define CONFIG_SYS_NAND_PAGE_SIZE	2048
 #define CONFIG_SYS_NAND_OOBSIZE		64
 #define CONFIG_SYS_NAND_BLOCK_SIZE	(128*1024)
 #define CONFIG_SYS_NAND_BAD_BLOCK_POS	NAND_LARGE_BADBLOCK_POS
-#define CONFIG_SYS_NAND_ECCPOS		{2, 3, 4, 5, 6, 7, 8, 9,\
-						10, 11, 12, 13}
+#define CONFIG_SYS_NAND_ECCPOS		{ 2,  3,  4,  5,  6,  7,  8,  9, 10, \
+					 11, 12, 13, 14, 16, 17, 18, 19, 20, \
+					 21, 22, 23, 24, 25, 26, 27, 28, 30, \
+					 31, 32, 33, 34, 35, 36, 37, 38, 39, \
+					 40, 41, 42, 44, 45, 46, 47, 48, 49, \
+					 50, 51, 52, 53, 54, 55, 56 }
 #define CONFIG_SYS_NAND_ECCSIZE		512
-#define CONFIG_SYS_NAND_ECCBYTES	3
-#define CONFIG_NAND_OMAP_ECCSCHEME	OMAP_ECC_HAM1_CODE_HW
+#define CONFIG_SYS_NAND_ECCBYTES	13
+#define CONFIG_NAND_OMAP_ECCSCHEME	OMAP_ECC_BCH8_CODE_HW_DETECTION_SW
+#define CONFIG_SYS_NAND_MAX_OOBFREE	2
+#define CONFIG_SYS_NAND_MAX_ECCPOS	56
 #define CONFIG_SYS_NAND_U_BOOT_START	CONFIG_SYS_TEXT_BASE
-#define CONFIG_SYS_NAND_U_BOOT_OFFS	0x80000
+#define CONFIG_SYS_NAND_U_BOOT_OFFS	0x20000
+#define CONFIG_MTD_PARTITIONS		/* required for UBI partition support */
+#define CONFIG_MTD_DEVICE		/* needed for mtdparts commands */
+/* NAND block size is 128 KiB.  Synchronize these values with
+ * corresponding Device Tree entries in Linux:
+ *  MLO(SPL)             4 * NAND_BLOCK_SIZE = 512 KiB  @ 0x000000
+ *  U-Boot              14 * NAND_BLOCK_SIZE = 1792 KiB @ 0x080000
+ *  U-Boot environment   2 * NAND_BLOCK_SIZE = 256 KiB  @ 0x240000
+ *  Kernel              28 * NAND_BLOCK_SIZE = 5 MiB    @ 0x280000
+ *  RootFS              Remaining Flash Space           @ 0x780000
+ */
+#define MTDIDS_DEFAULT "nand0=omap2-nand.0"
+#define MTDPARTS_DEFAULT "mtdparts=omap2-nand.0:"	\
+	"512k(MLO),"					\
+	"1792k(u-boot),"				\
+	"256k(u-boot-env),"				\
+	"5m(kernel),"					\
+	"-(rootfs)"
 
 /*
  * 1MB into the SDRAM to allow for SPL's bss at the beginning of SDRAM
