@@ -4,6 +4,10 @@ choice
 	prompt "OMAP3 board select"
 	optional
 
+config TARGET_HALO_AM3517
+	bool "Halo AM3517"
+	select SUPPORT_SPL
+
 config TARGET_AM3517_EVM
 	bool "AM3517 EVM"
 	select SUPPORT_SPL
@@ -121,6 +125,7 @@ endchoice
 config SYS_SOC
 	default "omap3"
 
+source "board/asd/haloam3517/Kconfig"
 source "board/logicpd/am3517evm/Kconfig"
 source "board/teejet/mt_ventoux/Kconfig"
 source "board/ti/beagle/Kconfig"
