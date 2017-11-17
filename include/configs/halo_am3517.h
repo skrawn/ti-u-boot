@@ -241,6 +241,7 @@
 		"${optargs} " \
 		"root=${mmcroot} " \
 		"rootfstype=${mmcrootfstype} " \
+		"ubi.mtd=${ubipartname} " \
 		"${cmdline}\0" \
 	"nandargs="\
         "setenv ubipartname ${mender_mtd_ubi_dev_name}; "\
@@ -281,6 +282,7 @@
 	"loadfdt=fatload mmc ${mmcdev}:${mmcpart} ${fdtaddr} ${fdtfile}\0" \
 	"mmcboot=echo Booting from mmc ...; " \
 		"run mmcargs; " \
+		"ubi part ${ubipartname}; " \
 		"bootz ${loadaddr} - ${fdtaddr}\0" \
 	"nandboot=echo Booting from nand with mender support...; " \
         "run mender_setup; "\
