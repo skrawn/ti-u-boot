@@ -235,16 +235,14 @@
 	"ubootsize=0x100000\0" \
 	"rootfsubifsprodstage=0x280000\0" \
 	"ubipartname=${mender_mtd_ubi_dev_name}\0" \
-	"mmcrootfstype=ext4 rootwait fixrtc\0" \
+	"mmcrootfstype=ext4\0" \
 	"mmcargs=" \
-		"setenv ubipartname ${mender_mtd_ubi_dev_name}; "\
+		"setenv ubipartname ${mender_mtd_ubi_dev_name}; " \
 		"setenv bootargs console=${console} " \
 			"${mtdparts} " \
 			"${optargs} " \
-			"root=${mmcroot} " \
-			"rootfstype=${mmcrootfstype} " \
-			"ubi.mtd=${ubipartname} " \
-			"ubi.fm_autoconvert=1 " \
+			"root=${mmcroot} ubi.mtd=${ubipartname} " \
+			"rootfstype=${mmcrootfstype} rootwait ubi.fm_autoconvert=1 " \
 			"${cmdline}\0" \
 	"nandargs="\
         "setenv ubipartname ${mender_mtd_ubi_dev_name}; "\
@@ -285,8 +283,11 @@
 	"loadfdt=fatload mmc ${mmcdev}:${mmcpart} ${fdtaddr} ${fdtfile}\0" \
 	"mmcboot=echo Booting from mmc ...; " \
 		"run mmcargs; " \
-		"ubi part ${mender_mtd_ubi_dev_name}; " \
-		"bootz ${loadaddr} - ${fdtaddr}\0" \
+		"if run loadimage; then " \
+			"run loadfdt; " \
+			"ubi part ${mender_mtd_ubi_dev_name}; " \
+			"bootz ${loadaddr} - ${fdtaddr}" \
+		"fi;\0" \
 	"nandboot=echo Booting from nand with mender support...; " \
         "run mender_setup; "\
         "run nandargs; "\
@@ -299,14 +300,6 @@
 #define CONFIG_BOOTCOMMAND \
 	"mmc dev ${mmcdev}; if mmc rescan; then " \
 		"echo SD/MMC found on device $mmcdev; " \
-		"if run loadbootenv; then " \
-			"run importbootenv; " \
-		"fi; " \
-		"echo Checking if uenvcmd is set ...; " \
-		"if test -n $uenvcmd; then " \
-			"echo Running uenvcmd ...; " \
-			"run uenvcmd; " \
-		"fi; " \
 		"echo Running default loadimage ...; " \
 		"setenv bootfile zImage; " \
 		"if run loadimage; then " \
