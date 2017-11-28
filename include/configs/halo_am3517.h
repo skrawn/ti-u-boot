@@ -236,13 +236,16 @@
 	"rootfsubifsprodstage=0x280000\0" \
 	"ubipartname=${mender_mtd_ubi_dev_name}\0" \
 	"mmcrootfstype=ext4 rootwait fixrtc\0" \
-	"mmcargs=setenv bootargs console=${console} " \
-		"${mtdparts} " \
-		"${optargs} " \
-		"root=${mmcroot} " \
-		"rootfstype=${mmcrootfstype} " \
-		"ubi.mtd=${ubipartname} " \
-		"${cmdline}\0" \
+	"mmcargs=" \
+		"setenv ubipartname ${mender_mtd_ubi_dev_name}; "\
+		"setenv bootargs console=${console} " \
+			"${mtdparts} " \
+			"${optargs} " \
+			"root=${mmcroot} " \
+			"rootfstype=${mmcrootfstype} " \
+			"ubi.mtd=${ubipartname} " \
+			"ubi.fm_autoconvert=1 " \
+			"${cmdline}\0" \
 	"nandargs="\
         "setenv ubipartname ${mender_mtd_ubi_dev_name}; "\
         "setenv bootargs console=${console} " \
@@ -282,7 +285,7 @@
 	"loadfdt=fatload mmc ${mmcdev}:${mmcpart} ${fdtaddr} ${fdtfile}\0" \
 	"mmcboot=echo Booting from mmc ...; " \
 		"run mmcargs; " \
-		"ubi part ${ubipartname}; " \
+		"ubi part ${mender_mtd_ubi_dev_name}; " \
 		"bootz ${loadaddr} - ${fdtaddr}\0" \
 	"nandboot=echo Booting from nand with mender support...; " \
         "run mender_setup; "\
