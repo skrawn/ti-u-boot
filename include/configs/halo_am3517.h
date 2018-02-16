@@ -286,7 +286,7 @@
 		"if run loadimage; then " \
 			"run loadfdt; " \
 			"ubi part ${mender_mtd_ubi_dev_name}; " \
-			"bootz ${loadaddr} - ${fdtaddr}" \
+			"bootz ${loadaddr} - ${fdtaddr};" \
 		"fi;\0" \
 	"nandboot=echo Booting from nand with mender support...; " \
         "run mender_setup; "\
