@@ -243,6 +243,12 @@
 	"rootfsubifsprodstage=0x280000\0" \
 	"ubipartname=ubi\0" \
 	"mmcrootfstype=ext4 rootwait fixrtc\0" \
+	"ethaddr=C0:B1:3D:88:88:89\0" \
+	"ipaddr=192.168.99.2\0" \
+	"serverip=192.168.99.1\0" \
+	"tftpmlofile=MLO-production-fs5-am3517\0" \
+	"tftpubootfile=u-boot-fs5-am3517.img\0" \
+	"tftpubifs=core-image-fs5-nand-firstrun-fs5-am3517.ubifs\0" \
 	"mmcargs=setenv bootargs console=${console} " \
 		"${mtdparts} " \
 		"${optargs} " \
@@ -258,17 +264,17 @@
 	"nandMLO=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} MLO; " \
 		"nandecc hw hamming1; nand erase.part MLO; " \
 		"nand write ${loadaddr} 0x0 ${MLOsize}; nandecc sw bch8; \0"\
-	"nandMLOfirstrun=nandecc hw hamming1; nand read ${loadaddr} ${MLOprodstage} ${MLOsize}; " \
+	"nandMLOfirstrun=tftpboot ${loadaddr} ${tftpmlofile}; " \
 		"nand erase.part MLO; " \
 		"nand write ${loadaddr} 0x0 ${MLOsize}; nandecc sw bch8; \0"\
 	"nanduboot=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} u-boot.img; " \
 		"nandecc sw bch8; nand erase.part u-boot; " \
 		"nand write ${loadaddr} ${ubootstart} ${ubootsize}\0" \
-	"nandubootfirstrun=nandecc hw hamming1; nand read ${loadaddr} ${ubootprodstage} ${ubootsize}; " \
+	"nandubootfirstrun=tftpboot ${loadaddr} ${tftpubootfile}; " \
 		"nandecc sw bch8; nand erase.part u-boot; "\
 		"nand write ${loadaddr} ${ubootstart} ${ubootsize}\0" \
 	"nandubifsloadmmc=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} core-image-fs5-nand-fs5-am3517.ubifs;\0" \
-	"nandubifsloadfirstrun=nandecc hw hamming1; nand read ${loadaddr} ${rootfsubifsprodstage} ${nandrootfssize}; nandecc sw bch8;\0" \
+	"nandubifsloadfirstrun=tftpboot ${loadaddr} ${tftpubifs}; nandecc sw bch8;\0" \
 	"nandubicreate=nand erase.part ${ubipartname}; ubi part ${ubipartname}; " \
         "ubi createvol rootfsa ${nandrootfssize}; ubi createvol rootfsb ${nandrootfssize}; ubi createvol data;\0"\
     "nandubifswrite=ubi write ${loadaddr} ${nandbootpart} ${nandrootfssize};\0"  \
