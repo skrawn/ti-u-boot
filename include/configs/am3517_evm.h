@@ -349,17 +349,24 @@
 #define CONFIG_SYS_NAND_PAGE_COUNT	64
 #define CONFIG_SYS_NAND_PAGE_SIZE	2048
 #define CONFIG_SYS_NAND_OOBSIZE		64
+#define CONFIG_SYS_NAND_ECCPOS_HAM1_HW {2, 3, 4, 5, 6, 7, 8, 9,\
+                                            10, 11, 12, 13}
+#define CONFIG_SYS_NAND_ECCBYTES_HAM1_HW   3
+#define CONFIG_SYS_NAND_ECCPOS_BCH8_SW     { 2,  3,  4,  5,  6,  7,  8,  9, 10, \
+                                        11, 12, 13, 14, 16, 17, 18, 19, 20, \
+                                        21, 22, 23, 24, 25, 26, 27, 28, 30, \
+                                        31, 32, 33, 34, 35, 36, 37, 38, 39, \
+                                        40, 41, 42, 44, 45, 46, 47, 48, 49, \
+                                        50, 51, 52, 53, 54, 55, 56 }
+
+#define CONFIG_SYS_NAND_ECCBYTES_BCH8_SW   13
 #define CONFIG_SYS_NAND_BLOCK_SIZE	(128*1024)
 #define CONFIG_SYS_NAND_BAD_BLOCK_POS	NAND_LARGE_BADBLOCK_POS
-#define CONFIG_SYS_NAND_ECCPOS		{ 2,  3,  4,  5,  6,  7,  8,  9, 10, \
-					 11, 12, 13, 14, 16, 17, 18, 19, 20, \
-					 21, 22, 23, 24, 25, 26, 27, 28, 30, \
-					 31, 32, 33, 34, 35, 36, 37, 38, 39, \
-					 40, 41, 42, 44, 45, 46, 47, 48, 49, \
-					 50, 51, 52, 53, 54, 55, 56 }
 #define CONFIG_SYS_NAND_ECCSIZE		512
-#define CONFIG_SYS_NAND_ECCBYTES	13
-#define CONFIG_NAND_OMAP_ECCSCHEME	OMAP_ECC_BCH8_CODE_HW_DETECTION_SW
+#define CONFIG_NAND_OMAP_ECCSCHEME OMAP_ECC_HAM1_CODE_HW
+#define CONFIG_SYS_NAND_ECCBYTES   CONFIG_SYS_NAND_ECCBYTES_HAM1_HW
+#define CONFIG_SYS_NAND_ECCPOS     CONFIG_SYS_NAND_ECCPOS_HAM1_HW
+
 #define CONFIG_SYS_NAND_MAX_OOBFREE	2
 #define CONFIG_SYS_NAND_MAX_ECCPOS	56
 #define CONFIG_SYS_NAND_U_BOOT_START	CONFIG_SYS_TEXT_BASE
