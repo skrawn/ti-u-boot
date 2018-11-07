@@ -60,7 +60,8 @@
 #define V_SCLK			(V_OSCK >> 1)
 
 /* Size of malloc() pool */
-#define CONFIG_SYS_MALLOC_LEN		(512 << 10)
+/* Must be > 512 << 10 for use with ubifs commands */
+#define CONFIG_SYS_MALLOC_LEN		(512 << 11)
 
 /* Hardware drivers */
 
@@ -169,39 +170,45 @@
 #define CONFIG_SYS_NAND_OOBSIZE		64
 #define CONFIG_SYS_NAND_BLOCK_SIZE	(128 * 1024)
 #define CONFIG_SYS_NAND_BAD_BLOCK_POS	NAND_LARGE_BADBLOCK_POS
-#define CONFIG_SYS_NAND_ECCPOS		{ 2,  3,  4,  5,  6,  7,  8,  9, 10, \
+#define CONFIG_SYS_NAND_ECCPOS_HAM1_HW {2, 3, 4, 5, 6, 7, 8, 9,\
+                                            10, 11, 12, 13}
+#define CONFIG_SYS_NAND_ECCBYTES_HAM1_HW	3
+#define CONFIG_SYS_NAND_ECCPOS_BCH8_SW		{ 2,  3,  4,  5,  6,  7,  8,  9, 10, \
 					 11, 12, 13, 14, 16, 17, 18, 19, 20, \
 					 21, 22, 23, 24, 25, 26, 27, 28, 30, \
 					 31, 32, 33, 34, 35, 36, 37, 38, 39, \
 					 40, 41, 42, 44, 45, 46, 47, 48, 49, \
 					 50, 51, 52, 53, 54, 55, 56 }
 
+#define CONFIG_SYS_NAND_ECCBYTES_BCH8_SW	13
+
 #define CONFIG_SYS_NAND_ECCSIZE		512
-#define CONFIG_SYS_NAND_ECCBYTES	13
-#define CONFIG_NAND_OMAP_ECCSCHEME	OMAP_ECC_BCH8_CODE_HW_DETECTION_SW
+#define CONFIG_NAND_OMAP_ECCSCHEME	OMAP_ECC_HAM1_CODE_HW
+#define CONFIG_SYS_NAND_ECCBYTES	CONFIG_SYS_NAND_ECCBYTES_HAM1_HW
+#define CONFIG_SYS_NAND_ECCPOS	    CONFIG_SYS_NAND_ECCPOS_HAM1_HW
 #define CONFIG_SYS_NAND_MAX_OOBFREE	2
 #define CONFIG_SYS_NAND_MAX_ECCPOS	56
 #define CONFIG_SYS_NAND_U_BOOT_START	CONFIG_SYS_TEXT_BASE
-#define CONFIG_SYS_NAND_U_BOOT_OFFS	0x80000
+
+/**
+ * See FS5-200
+ */
+#define CONFIG_SYS_NAND_U_BOOT_OFFS	0x20000
 #define CONFIG_MTD_PARTITIONS		/* required for UBI partition support */
 #define CONFIG_MTD_DEVICE		/* needed for mtdparts commands */
 /* NAND block size is 128 KiB.  Synchronize these values with
  * corresponding Device Tree entries in Linux:
- *  MLO(SPL)             4 * NAND_BLOCK_SIZE = 512 KiB  @ 0x000000
- *  U-Boot              15 * NAND_BLOCK_SIZE = 1920 KiB @ 0x080000
- *  U-Boot environment   2 * NAND_BLOCK_SIZE = 256 KiB  @ 0x260000
- *  Kernel              64 * NAND_BLOCK_SIZE = 8 MiB    @ 0x2A0000
- *  DTB                  4 * NAND_BLOCK_SIZE = 512 KiB  @ 0xAA0000
- *  RootFS              Remaining Flash Space           @ 0xB20000
+ *  MLO(SPL)            1 * NAND_BLOCK_SIZE = 128 KiB  @ 0x000000
+ *  u-boot              8 * NAND_BLOCK_SIZE = 1024 KiB @ 0x020000
+ *  u-boot-env          2 * NAND_BLOCK_SIZE = 256 KiB  @ 0x120000
+ *  ubi                 Remaining Flash Space           @ 0x160000
  */
 #define MTDIDS_DEFAULT "nand0=omap2-nand.0"
 #define MTDPARTS_DEFAULT "mtdparts=omap2-nand.0:"	\
-	"512k(MLO),"					\
-	"1920k(u-boot),"				\
+	"128k(MLO),"					\
+	"1024k(u-boot),"				\
 	"256k(u-boot-env),"				\
-	"8m(kernel),"					\
-	"512k(dtb),"					\
-	"-(rootfs)"
+	"-(ubi)"
 #else
 #define MTDIDS_DEFAULT
 #define MTDPARTS_DEFAULT
@@ -226,6 +233,15 @@
 	"mmcdev=0\0" \
 	"mmcpart=1\0" \
 	"mmcroot=/dev/mmcblk0p2 rw\0" \
+	"nandbootpart=rootfsa\0" \
+	"nandrootfssize=0x8000000\0" \
+	"MLOprodstage=0x160000\0" \
+	"ubootprodstage=0x180000\0" \
+	"MLOsize=0x20000\0" \
+	"ubootstart=0x20000\0" \
+	"ubootsize=0x100000\0" \
+	"rootfsubifsprodstage=0x280000\0" \
+	"ubipartname=ubi\0" \
 	"mmcrootfstype=ext4 rootwait fixrtc\0" \
 	"mmcargs=setenv bootargs console=${console} " \
 		"${mtdparts} " \
@@ -236,28 +252,31 @@
 	"nandargs=setenv bootargs console=${console} " \
 		"${mtdparts} " \
 		"${optargs} " \
-		"root=ubi0:rootfs rw ubi.mtd=5,2048 " \
+		"root=ubi0:${nandbootpart} ro ubi.mtd=${ubipartname} " \
 		"rootfstype=ubifs rootwait " \
 		"${cmdline}\0" \
-	"nandfdt=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${fdtfile}; " \
-		"nandecc sw bch8; nand erase 0xaa0000 0x80000; " \
-		"nand write ${loadaddr} 0xaa0000 0x80000\0" \
-	"nandkern=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} uImage; " \
-		"nandecc sw bch8; nand erase 0x2a0000 0x800000; " \
-		"nand write ${loadaddr} 0x2a0000 0x800000\0" \
 	"nandMLO=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} MLO; " \
-		"nandecc hw hamming1; nand erase 0x0 0x20000; " \
-		"nand write ${loadaddr} 0x0 0x20000; " \
-		"nandecc sw bch8; nand erase 0x20000 0x60000; " \
-		"nand write ${loadaddr} 0x20000 0x20000; " \
-		"nand write ${loadaddr} 0x40000 0x20000; " \
-		"nand write ${loadaddr} 0x60000 0x20000\0" \
+		"nandecc hw hamming1; nand erase.part MLO; " \
+		"nand write ${loadaddr} 0x0 ${MLOsize}; nandecc sw bch8; \0"\
+	"nandMLOfirstrun=nandecc hw hamming1; nand read ${loadaddr} ${MLOprodstage} ${MLOsize}; " \
+		"nand erase.part MLO; " \
+		"nand write ${loadaddr} 0x0 ${MLOsize}; nandecc sw bch8; \0"\
 	"nanduboot=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} u-boot.img; " \
-		"nandecc sw bch8; nand erase 0x80000 0x1e0000; " \
-		"nand write ${loadaddr} 0x80000 0x1e0000\0" \
-	"nandreflash=if mmc rescan; then echo Reflashing NAND...; " \
-		"run nandMLO; run nandfdt; run nanduboot; run nandkern; " \
+		"nandecc sw bch8; nand erase.part u-boot; " \
+		"nand write ${loadaddr} ${ubootstart} ${ubootsize}\0" \
+	"nandubootfirstrun=nandecc hw hamming1; nand read ${loadaddr} ${ubootprodstage} ${ubootsize}; " \
+		"nandecc sw bch8; nand erase.part u-boot; "\
+		"nand write ${loadaddr} ${ubootstart} ${ubootsize}\0" \
+	"nandubifsloadmmc=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} core-image-fs5-nand-fs5-am3517.ubifs;\0" \
+	"nandubifsloadfirstrun=nandecc hw hamming1; nand read ${loadaddr} ${rootfsubifsprodstage} ${nandrootfssize}; nandecc sw bch8;\0" \
+	"nandubicreate=nand erase.part ${ubipartname}; ubi part ${ubipartname}; " \
+        "ubi createvol rootfsa ${nandrootfssize}; ubi createvol rootfsb ${nandrootfssize}; ubi createvol data;\0"\
+    "nandubifswrite=ubi write ${loadaddr} ${nandbootpart} ${nandrootfssize};\0"  \
+    "nandreflashmmc=if mmc rescan; then echo Reflashing NAND...; " \
+		"run nandMLO; run nanduboot; run nandubifsloadmmc; ubi part ${ubipartname}; run nandubifswrite;" \
 		"else echo No MMC detected!; fi;\0" \
+	"nandfirstrun=" \
+		"run nandMLOfirstrun; run nandubootfirstrun; run nandubifsloadfirstrun; run nandubicreate; run nandubifswrite;\0" \
 	"loadbootenv=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${bootenv}\0"\
 	"importbootenv=echo Importing environment from mmc ...; " \
 		"env import -t ${loadaddr} ${filesize}\0" \
@@ -270,8 +289,10 @@
 		"bootz ${loadaddr} - ${fdtaddr}\0" \
 	"nandboot=echo Booting from nand ...; " \
 		"run nandargs; " \
-		"nand read ${loadaddr} 2a0000 800000; " \
-		"nand read ${fdtaddr} aa0000 80000; " \
+		"ubi part ${ubipartname}; " \
+		"ubifsmount ubi0:${nandbootpart}; " \
+		"ubifsload ${loadaddr} /boot/uImage; " \
+		"ubifsload ${fdtaddr} /boot/${fdtfile}; " \
 		"bootm ${loadaddr} - ${fdtaddr}\0" \
 
 #define CONFIG_BOOTCOMMAND \
@@ -291,7 +312,7 @@
 			"run loadfdt; " \
 			"run mmcboot; " \
 		"fi; " \
-	"else run nandboot; fi"
+	"else run nandfirstrun; reset; fi"
 
 /* Miscellaneous configurable options */
 #define CONFIG_AUTO_COMPLETE
@@ -355,8 +376,9 @@
 
 #define CONFIG_SYS_ENV_SECT_SIZE	(128 << 10)	/* 128 KiB */
 #define CONFIG_ENV_SIZE			CONFIG_SYS_ENV_SECT_SIZE
-#define SMNAND_ENV_OFFSET		0x260000 /* environment starts here */
+#define SMNAND_ENV_OFFSET		0x120000 /* u-boot-env starts here */
 #define CONFIG_ENV_OFFSET		SMNAND_ENV_OFFSET
+#define CONFIG_ENV_OFFSET_REDUND		(CONFIG_ENV_OFFSET + CONFIG_ENV_SIZE)
 #define CONFIG_ENV_ADDR			SMNAND_ENV_OFFSET
 #define CONFIG_ENV_IS_IN_NAND
 
